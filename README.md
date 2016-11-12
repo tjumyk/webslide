@@ -2,7 +2,7 @@
 
 ![logo](static/image/logo-128.png)
 
-WebSlide is a tiny multi-user online presentation website based on [node.js](https://nodejs.org/) and [WebSocket](https://developer.mozilla.org/zh-CN/docs/Web/API/WebSocket).
+WebSlide is a tiny multi-user online slide show website based on [node.js](https://nodejs.org/) and [WebSocket](https://developer.mozilla.org/zh-CN/docs/Web/API/WebSocket).
  
 Currently, it is only an experimental project for ad-hoc usage only.
 
