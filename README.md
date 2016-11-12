@@ -15,12 +15,13 @@ Currently, it is only an experimental project for ad-hoc usage only.
 ## How to Run
 
  1. Install dependencies
+ 
    ```bash
-   npm install   
+   npm install
    ```
+
  2. Run server
+
    ```bash
    npm start 
    ```
- 
- 
