@@ -35,21 +35,37 @@ angular.module 'app', []
       data._active = true
       $scope.mouse_positions[data.user_id] = data
       $scope.mouse_timeout[data.user_id] = $timeout ->
-        $scope.mouse_positions[data.user_id]._active = false
+        pos = $scope.mouse_positions[data.user_id]
+        if pos
+          pos._active = false
       , 3000
 
   $scope.$watch 'status.file_id', (new_val)->
-    return if not new_val
-    $scope.show_home_menu = false
-    $scope.load_pdf('/pdf/'+new_val, $scope.status.page)
+    $scope.show_home_menu = !new_val
+    if !!new_val
+      $scope.load_pdf('/pdf/'+new_val, $scope.status.page)
 
   $scope.$watch 'status.page', (new_val)->
     return if not new_val or not $scope.pdf
     $scope.load_page(new_val)
 
+  $scope.get_user = (uid)->
+    return undefined  if !$scope.status
+    for user in $scope.status.users
+      if user.id == uid
+        return user
+    return undefined
+
   $scope.load_pdf = (url, page, callback)->
     $scope.pdf = undefined
-    PDFJS.getDocument(url).then (pdf)->
+    $scope.downloadProgress = 0
+    PDFJS.getDocument(url, undefined , undefined , (progress)->
+      $timeout ->
+        if progress.loaded >= progress.total
+          $scope.downloadProgress = undefined
+        else
+          $scope.downloadProgress = Math.round(100.0 * progress.loaded / progress.total)
+    ).then (pdf)->
       $scope.pdf = pdf
       $scope.load_page(page, callback)
     , (data)->
@@ -65,21 +81,7 @@ angular.module 'app', []
       console.error(data)
 
   $scope.toggle_fullscreen = ->
-    if !document.fullscreenElement and !document.mozFullScreenElement and !document.webkitFullscreenElement
-      elem = document.documentElement
-      if elem.requestFullscreen
-        elem.requestFullscreen()
-      else if elem.mozRequestFullScreen
-        elem.mozRequestFullScreen()
-      else if elem.webkitRequestFullscreen
-        elem.webkitRequestFullscreen()
-    else
-      if document.cancelFullScreen
-        document.cancelFullScreen()
-      else if document.mozCancelFullScreen
-        document.mozCancelFullScreen()
-      else if document.webkitCancelFullScreen
-        document.webkitCancelFullScreen()
+    util.toggleFullscreen()
 
   $scope.render = ->
     if not $scope.pdf or not $scope.page

@@ -18,6 +18,27 @@
         },
         prettyJSON: function(json) {
           return JSON.stringify(eval(json), null, 4);
+        },
+        toggleFullscreen: function() {
+          var elem;
+          if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement) {
+            elem = document.documentElement;
+            if (elem.requestFullscreen) {
+              return elem.requestFullscreen();
+            } else if (elem.mozRequestFullScreen) {
+              return elem.mozRequestFullScreen();
+            } else if (elem.webkitRequestFullscreen) {
+              return elem.webkitRequestFullscreen();
+            }
+          } else {
+            if (document.cancelFullScreen) {
+              return document.cancelFullScreen();
+            } else if (document.mozCancelFullScreen) {
+              return document.mozCancelFullScreen();
+            } else if (document.webkitCancelFullScreen) {
+              return document.webkitCancelFullScreen();
+            }
+          }
         }
       };
       return service;

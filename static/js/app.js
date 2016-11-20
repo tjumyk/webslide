@@ -36,16 +36,19 @@
           data._active = true;
           $scope.mouse_positions[data.user_id] = data;
           return $scope.mouse_timeout[data.user_id] = $timeout(function() {
-            return $scope.mouse_positions[data.user_id]._active = false;
+            var pos;
+            pos = $scope.mouse_positions[data.user_id];
+            if (pos) {
+              return pos._active = false;
+            }
           }, 3000);
         });
       });
       $scope.$watch('status.file_id', function(new_val) {
-        if (!new_val) {
-          return;
+        $scope.show_home_menu = !new_val;
+        if (!!new_val) {
+          return $scope.load_pdf('/pdf/' + new_val, $scope.status.page);
         }
-        $scope.show_home_menu = false;
-        return $scope.load_pdf('/pdf/' + new_val, $scope.status.page);
       });
       $scope.$watch('status.page', function(new_val) {
         if (!new_val || !$scope.pdf) {
@@ -53,9 +56,32 @@
         }
         return $scope.load_page(new_val);
       });
+      $scope.get_user = function(uid) {
+        var i, len, ref, user;
+        if (!$scope.status) {
+          return void 0;
+        }
+        ref = $scope.status.users;
+        for (i = 0, len = ref.length; i < len; i++) {
+          user = ref[i];
+          if (user.id === uid) {
+            return user;
+          }
+        }
+        return void 0;
+      };
       $scope.load_pdf = function(url, page, callback) {
         $scope.pdf = void 0;
-        return PDFJS.getDocument(url).then(function(pdf) {
+        $scope.downloadProgress = 0;
+        return PDFJS.getDocument(url, void 0, void 0, function(progress) {
+          return $timeout(function() {
+            if (progress.loaded >= progress.total) {
+              return $scope.downloadProgress = void 0;
+            } else {
+              return $scope.downloadProgress = Math.round(100.0 * progress.loaded / progress.total);
+            }
+          });
+        }).then(function(pdf) {
           $scope.pdf = pdf;
           return $scope.load_page(page, callback);
         }, function(data) {
@@ -75,25 +101,7 @@
         });
       };
       $scope.toggle_fullscreen = function() {
-        var elem;
-        if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement) {
-          elem = document.documentElement;
-          if (elem.requestFullscreen) {
-            return elem.requestFullscreen();
-          } else if (elem.mozRequestFullScreen) {
-            return elem.mozRequestFullScreen();
-          } else if (elem.webkitRequestFullscreen) {
-            return elem.webkitRequestFullscreen();
-          }
-        } else {
-          if (document.cancelFullScreen) {
-            return document.cancelFullScreen();
-          } else if (document.mozCancelFullScreen) {
-            return document.mozCancelFullScreen();
-          } else if (document.webkitCancelFullScreen) {
-            return document.webkitCancelFullScreen();
-          }
-        }
+        return util.toggleFullscreen();
       };
       $scope.render = function() {
         var scale_h, scale_w, viewport;
