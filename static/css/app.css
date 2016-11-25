@@ -6,7 +6,7 @@ body {
 body {
   background: #eee;
 }
-#canvas-wrapper {
+.canvas-wrapper {
   position: absolute;
 }
 .canvas {

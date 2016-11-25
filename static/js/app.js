@@ -15,7 +15,7 @@
       $scope.host_mode = false;
       $scope.mouse_positions = {};
       $scope.mouse_timeout = {};
-      canvas_wrapper = document.getElementById('canvas-wrapper');
+      canvas_wrapper = document.querySelector('.canvas-wrapper');
       canvas_pdf = document.getElementById('canvas-pdf');
       canvas_pdf_context = canvas_pdf.getContext('2d');
       canvas_board = document.getElementById('canvas-board');
@@ -266,6 +266,7 @@
       };
       $(canvas_wrapper).on('mousemove', function(e) {
         var offset;
+        e.preventDefault();
         if (!$scope.status || !$scope.pdf || !$scope.scale) {
           return;
         }
@@ -277,6 +278,7 @@
       });
       $(canvas_wrapper).on('touchmove', function(e) {
         var offset, t;
+        e.preventDefault();
         if (!$scope.status || !$scope.pdf || !$scope.scale) {
           return;
         }

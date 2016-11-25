@@ -14,7 +14,7 @@ angular.module 'app', []
   $scope.mouse_positions = {}
   $scope.mouse_timeout = {}
 
-  canvas_wrapper = document.getElementById('canvas-wrapper')
+  canvas_wrapper = document.querySelector('.canvas-wrapper')
   canvas_pdf = document.getElementById('canvas-pdf')
   canvas_pdf_context = canvas_pdf.getContext('2d')
   canvas_board = document.getElementById('canvas-board')
@@ -206,6 +206,7 @@ angular.module 'app', []
       $scope.socket_io.emit 'statusUpdate', $scope.status
 
   $(canvas_wrapper).on 'mousemove', (e)->
+    e.preventDefault();
     if not $scope.status or not $scope.pdf or not $scope.scale
       return
     offset = $(@).offset()
@@ -214,6 +215,7 @@ angular.module 'app', []
       y: (e.pageY - offset.top) / $scope.scale
 
   $(canvas_wrapper).on 'touchmove', (e)->
+    e.preventDefault();
     if not $scope.status or not $scope.pdf or not $scope.scale
       return
     t = e.touches[0]
