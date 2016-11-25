@@ -45,6 +45,8 @@ angular.module 'app', []
     $scope.show_home_menu = !new_val
     if !!new_val
       $scope.load_pdf('/pdf/'+new_val, $scope.status.page)
+    else
+      $scope.reset_pdf()
 
   $scope.$watch 'status.page', (new_val)->
     return if not new_val or not $scope.pdf
@@ -72,6 +74,12 @@ angular.module 'app', []
       $scope.load_page(page, callback)
     , (data)->
       console.error(data)
+      
+  $scope.reset_pdf = ->
+    $scope.page = undefined
+    $scope.pdf = undefined
+    canvas_wrapper.style.width = '0px'
+    canvas_wrapper.style.height = '0px'
 
   $scope.load_page = (page_num, callback)->
     return if not $scope.pdf
@@ -108,6 +116,7 @@ angular.module 'app', []
   $inputPDF.on 'change', ()->
     return if @files.length != 1
     sendFile(@files[0])
+    @.value = ''
 
   $scope.startPresentation = ->
     $scope.uploadProgress = undefined

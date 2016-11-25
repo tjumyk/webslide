@@ -49,6 +49,8 @@
         $scope.show_home_menu = !new_val;
         if (!!new_val) {
           return $scope.load_pdf('/pdf/' + new_val, $scope.status.page);
+        } else {
+          return $scope.reset_pdf();
         }
       });
       $scope.$watch('status.page', function(new_val) {
@@ -90,6 +92,12 @@
         }, function(data) {
           return console.error(data);
         });
+      };
+      $scope.reset_pdf = function() {
+        $scope.page = void 0;
+        $scope.pdf = void 0;
+        canvas_wrapper.style.width = '0px';
+        return canvas_wrapper.style.height = '0px';
       };
       $scope.load_page = function(page_num, callback) {
         if (!$scope.pdf) {
@@ -134,7 +142,8 @@
         if (this.files.length !== 1) {
           return;
         }
-        return sendFile(this.files[0]);
+        sendFile(this.files[0]);
+        return this.value = '';
       });
       $scope.startPresentation = function() {
         $scope.uploadProgress = void 0;
