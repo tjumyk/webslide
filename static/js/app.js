@@ -4,7 +4,7 @@
 
   angular.module('app', []).controller('rootController', [
     '$scope', '$http', '$sce', '$timeout', 'util', function($scope, $http, $sce, $timeout, util) {
-      var $inputPDF, canvas_board, canvas_board_context, canvas_pdf, canvas_pdf_context, delete_ghost_users, fileProgress, resizeCanvas, sendFile;
+      var $inputPDF, canvas_board, canvas_board_context, canvas_pdf, canvas_pdf_context, canvas_wrapper, delete_ghost_users, fileProgress, resizeCanvas, sendFile;
       $scope.app = {
         name: 'Webslide',
         title: 'Webslide',
@@ -15,6 +15,7 @@
       $scope.host_mode = false;
       $scope.mouse_positions = {};
       $scope.mouse_timeout = {};
+      canvas_wrapper = document.getElementById('canvas-wrapper');
       canvas_pdf = document.getElementById('canvas-pdf');
       canvas_pdf_context = canvas_pdf.getContext('2d');
       canvas_board = document.getElementById('canvas-board');
@@ -111,10 +112,18 @@
           return;
         }
         viewport = $scope.page.getViewport(1.0);
-        scale_w = canvas_pdf.width / viewport.width;
-        scale_h = canvas_pdf.height / viewport.height;
+        scale_w = document.body.clientWidth / viewport.width;
+        scale_h = document.body.clientHeight / viewport.height;
         $scope.scale = Math.min(scale_w, scale_h);
         viewport = $scope.page.getViewport($scope.scale);
+        canvas_wrapper.style.width = viewport.width + 'px';
+        canvas_wrapper.style.height = viewport.height + 'px';
+        canvas_wrapper.style.left = (document.body.clientWidth - viewport.width) / 2 + 'px';
+        canvas_wrapper.style.top = (document.body.clientHeight - viewport.height) / 2 + 'px';
+        $('canvas').each(function() {
+          this.width = viewport.width;
+          return this.height = viewport.height;
+        });
         return $scope.page.render({
           canvasContext: canvas_pdf_context,
           viewport: viewport
@@ -205,10 +214,6 @@
         }
       };
       resizeCanvas = function() {
-        $('canvas').each(function() {
-          this.width = this.clientWidth;
-          return this.height = this.clientHeight;
-        });
         return $timeout(function() {
           return $scope.render();
         });
@@ -250,25 +255,27 @@
           return $scope.socket_io.emit('statusUpdate', $scope.status);
         }
       };
-      $(window).on('mousemove', function(e) {
+      $(canvas_wrapper).on('mousemove', function(e) {
+        var offset;
         if (!$scope.status || !$scope.pdf || !$scope.scale) {
           return;
         }
+        offset = $(this).offset();
         return $scope.socket_io.emit('mousePosUpdate', {
-          x: e.pageX / $scope.scale,
-          y: e.pageY / $scope.scale
+          x: (e.pageX - offset.left) / $scope.scale,
+          y: (e.pageY - offset.top) / $scope.scale
         });
       });
-      $(window).on('touchmove', function(e) {
-        var t;
+      $(canvas_wrapper).on('touchmove', function(e) {
+        var offset, t;
         if (!$scope.status || !$scope.pdf || !$scope.scale) {
           return;
         }
-        console.log(e);
         t = e.touches[0];
+        offset = $(this).offset();
         return $scope.socket_io.emit('mousePosUpdate', {
-          x: t.pageX / $scope.scale,
-          y: t.pageY / $scope.scale
+          x: (t.pageX - offset.left) / $scope.scale,
+          y: (t.pageY - offset.top) / $scope.scale
         });
       });
       return $(window).on('close', function() {

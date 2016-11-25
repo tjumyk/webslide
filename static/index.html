@@ -28,12 +28,14 @@
     <script src="/static/js/util.js?v=201611120910"></script>
 </head>
 <body>
-<canvas id="canvas-pdf" class="canvas"></canvas>
-<canvas id="canvas-board" class="canvas"></canvas>
-<div class="canvas-cursors">
-    <div class="cursor" ng-show="data._active" ng-repeat="(uid, data) in mouse_positions"
-         ng-style="{'top': data.y * scale, 'left': data.x * scale, 'color': get_user(uid).color}">
-        <span class="glyphicon glyphicon-pencil"></span>
+<div id="canvas-wrapper">
+    <canvas id="canvas-pdf" class="canvas"></canvas>
+    <canvas id="canvas-board" class="canvas"></canvas>
+    <div class="canvas-cursors">
+        <div class="cursor" ng-show="data._active" ng-repeat="(uid, data) in mouse_positions"
+             ng-style="{'top': data.y * scale, 'left': data.x * scale, 'color': get_user(uid).color}">
+            <span class="glyphicon glyphicon-pencil"></span>
+        </div>
     </div>
 </div>
 <div class="box-home-menu" ng-show="show_home_menu">

@@ -14,6 +14,7 @@ angular.module 'app', []
   $scope.mouse_positions = {}
   $scope.mouse_timeout = {}
 
+  canvas_wrapper = document.getElementById('canvas-wrapper')
   canvas_pdf = document.getElementById('canvas-pdf')
   canvas_pdf_context = canvas_pdf.getContext('2d')
   canvas_board = document.getElementById('canvas-board')
@@ -88,10 +89,17 @@ angular.module 'app', []
     if not $scope.pdf or not $scope.page
       return
     viewport = $scope.page.getViewport(1.0)
-    scale_w = canvas_pdf.width / viewport.width
-    scale_h = canvas_pdf.height / viewport.height
+    scale_w = document.body.clientWidth / viewport.width
+    scale_h = document.body.clientHeight / viewport.height
     $scope.scale = Math.min(scale_w, scale_h)
     viewport = $scope.page.getViewport($scope.scale)
+    canvas_wrapper.style.width = viewport.width + 'px'
+    canvas_wrapper.style.height = viewport.height + 'px'
+    canvas_wrapper.style.left = (document.body.clientWidth - viewport.width)/2 + 'px'
+    canvas_wrapper.style.top = (document.body.clientHeight - viewport.height)/2 + 'px'
+    $('canvas').each ->
+      @width = viewport.width
+      @height = viewport.height
     $scope.page.render
       canvasContext: canvas_pdf_context
       viewport: viewport
@@ -157,9 +165,6 @@ angular.module 'app', []
       console.warn('File upload progress is not computable')
 
   resizeCanvas = ->
-    $('canvas').each ->
-      @width = @clientWidth
-      @height = @clientHeight
     $timeout ->
       $scope.render()
 
@@ -191,21 +196,22 @@ angular.module 'app', []
       $scope.status.page = page + 1
       $scope.socket_io.emit 'statusUpdate', $scope.status
 
-  $(window).on 'mousemove', (e)->
+  $(canvas_wrapper).on 'mousemove', (e)->
     if not $scope.status or not $scope.pdf or not $scope.scale
       return
+    offset = $(@).offset()
     $scope.socket_io.emit 'mousePosUpdate',
-      x: e.pageX / $scope.scale
-      y: e.pageY / $scope.scale
+      x: (e.pageX - offset.left)/ $scope.scale
+      y: (e.pageY - offset.top) / $scope.scale
 
-  $(window).on 'touchmove', (e)->
+  $(canvas_wrapper).on 'touchmove', (e)->
     if not $scope.status or not $scope.pdf or not $scope.scale
       return
-    console.log(e)
     t = e.touches[0]
+    offset = $(@).offset()
     $scope.socket_io.emit 'mousePosUpdate',
-      x: t.pageX / $scope.scale
-      y: t.pageY / $scope.scale
+      x: (t.pageX - offset.left) / $scope.scale
+      y: (t.pageY - offset.top) / $scope.scale
 
   $(window).on 'close', ->
     $scope.socket_io.close()
