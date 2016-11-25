@@ -44,15 +44,22 @@ angular.module 'app', []
     $scope.$apply ->
       if not $scope.status or not $scope.pdf or not $scope.scale
         return
+      total_seg = data.path.length
+      if total_seg == 0
+        return
+      scale = $scope.scale
       color = $scope.get_user(data.user_id).color
-      canvas_board_context.lineWidth = $scope.scale
+      canvas_board_context.lineWidth = scale
       canvas_board_context.strokeStyle = color
       canvas_board_context.beginPath()
-      for point, i in data.path
-        if i == 0
-          canvas_board_context.moveTo(point.x * $scope.scale, point.y * $scope.scale)
-        else
-          canvas_board_context.lineTo(point.x * $scope.scale, point.y * $scope.scale)
+      canvas_board_context.moveTo(data.path[0].x * scale, data.path[0].y * scale)
+      i = 1
+      prev_seg = data.path[0]
+      while i < total_seg
+        seg = data.path[i]
+        canvas_board_context.bezierCurveTo((prev_seg.x + prev_seg.ox) * scale, (prev_seg.y + prev_seg.oy) * scale, (seg.x + seg.ix) * scale, (seg.y + seg.iy) * scale, seg.x * scale, seg.y * scale)
+        prev_seg = seg
+        i++
       canvas_board_context.stroke()
       canvas_board_context.closePath()
   .on 'refresh', ->
@@ -132,6 +139,7 @@ angular.module 'app', []
     $scope.page.render
       canvasContext: canvas_pdf_context
       viewport: viewport
+    paper.setup([viewport.width, viewport.height])
 
   $inputPDF = $('#input-pdf')
   $inputPDF.on 'change', ()->
@@ -279,7 +287,26 @@ angular.module 'app', []
     canvas_board_buffer_context.clearRect(0, 0, canvas_board_buffer.width, canvas_board_buffer.height)
     draw_started = false
     $scope.socket_io.emit 'drawPath',
-      path: draw_path
+      path: optimize_path(draw_path)
+
+  optimize_path = (path)->
+    p = new paper.Path
+      segments: path
+    p.simplify(1.0)
+    results = []
+    total = p.segments.length
+    for seg, i in p.segments
+      data =
+        x: seg.point.x
+        y: seg.point.y
+      if i > 0
+        data.ix = seg.handleIn.x
+        data.iy = seg.handleIn.y
+      if i < total - 1
+        data.ox = seg.handleOut.x
+        data.oy = seg.handleOut.y
+      results.push(data)
+    return results
 
   $(canvas_wrapper)
   .on 'mousedown touchstart', draw_start

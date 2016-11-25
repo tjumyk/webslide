@@ -4,7 +4,7 @@
 
   angular.module('app', []).controller('rootController', [
     '$scope', '$http', '$sce', '$timeout', 'util', function($scope, $http, $sce, $timeout, util) {
-      var $inputPDF, canvas_board, canvas_board_buffer, canvas_board_buffer_context, canvas_board_context, canvas_pdf, canvas_pdf_context, canvas_wrapper, delete_ghost_users, draw_end, draw_path, draw_start, draw_started, drawing, fileProgress, resizeCanvas, sendFile;
+      var $inputPDF, canvas_board, canvas_board_buffer, canvas_board_buffer_context, canvas_board_context, canvas_pdf, canvas_pdf_context, canvas_wrapper, delete_ghost_users, draw_end, draw_path, draw_start, draw_started, drawing, fileProgress, optimize_path, resizeCanvas, sendFile;
       $scope.app = {
         name: 'Webslide',
         title: 'Webslide',
@@ -46,22 +46,27 @@
         });
       }).on('drawPath', function(data) {
         return $scope.$apply(function() {
-          var color, i, j, len, point, ref;
+          var color, i, prev_seg, scale, seg, total_seg;
           if (!$scope.status || !$scope.pdf || !$scope.scale) {
             return;
           }
+          total_seg = data.path.length;
+          if (total_seg === 0) {
+            return;
+          }
+          scale = $scope.scale;
           color = $scope.get_user(data.user_id).color;
-          canvas_board_context.lineWidth = $scope.scale;
+          canvas_board_context.lineWidth = scale;
           canvas_board_context.strokeStyle = color;
           canvas_board_context.beginPath();
-          ref = data.path;
-          for (i = j = 0, len = ref.length; j < len; i = ++j) {
-            point = ref[i];
-            if (i === 0) {
-              canvas_board_context.moveTo(point.x * $scope.scale, point.y * $scope.scale);
-            } else {
-              canvas_board_context.lineTo(point.x * $scope.scale, point.y * $scope.scale);
-            }
+          canvas_board_context.moveTo(data.path[0].x * scale, data.path[0].y * scale);
+          i = 1;
+          prev_seg = data.path[0];
+          while (i < total_seg) {
+            seg = data.path[i];
+            canvas_board_context.bezierCurveTo((prev_seg.x + prev_seg.ox) * scale, (prev_seg.y + prev_seg.oy) * scale, (seg.x + seg.ix) * scale, (seg.y + seg.iy) * scale, seg.x * scale, seg.y * scale);
+            prev_seg = seg;
+            i++;
           }
           canvas_board_context.stroke();
           return canvas_board_context.closePath();
@@ -161,10 +166,11 @@
           this.width = viewport.width;
           return this.height = viewport.height;
         });
-        return $scope.page.render({
+        $scope.page.render({
           canvasContext: canvas_pdf_context,
           viewport: viewport
         });
+        return paper.setup([viewport.width, viewport.height]);
       };
       $inputPDF = $('#input-pdf');
       $inputPDF.on('change', function() {
@@ -180,7 +186,7 @@
         $inputPDF.click();
       };
       delete_ghost_users = function() {
-        var j, k, len, len1, not_found, ref, results, to_remove, uid, user;
+        var j, k, len, len1, not_found, ref, results1, to_remove, uid, user;
         to_remove = [];
         for (uid in $scope.mouse_positions) {
           not_found = true;
@@ -196,12 +202,12 @@
             to_remove.push(uid);
           }
         }
-        results = [];
+        results1 = [];
         for (k = 0, len1 = to_remove.length; k < len1; k++) {
           uid = to_remove[k];
-          results.push(delete $scope.mouse_positions[uid]);
+          results1.push(delete $scope.mouse_positions[uid]);
         }
-        return results;
+        return results1;
       };
       sendFile = function(file) {
         return $timeout(function() {
@@ -355,8 +361,35 @@
         canvas_board_buffer_context.clearRect(0, 0, canvas_board_buffer.width, canvas_board_buffer.height);
         draw_started = false;
         return $scope.socket_io.emit('drawPath', {
-          path: draw_path
+          path: optimize_path(draw_path)
         });
+      };
+      optimize_path = function(path) {
+        var data, i, j, len, p, ref, results, seg, total;
+        p = new paper.Path({
+          segments: path
+        });
+        p.simplify(1.0);
+        results = [];
+        total = p.segments.length;
+        ref = p.segments;
+        for (i = j = 0, len = ref.length; j < len; i = ++j) {
+          seg = ref[i];
+          data = {
+            x: seg.point.x,
+            y: seg.point.y
+          };
+          if (i > 0) {
+            data.ix = seg.handleIn.x;
+            data.iy = seg.handleIn.y;
+          }
+          if (i < total - 1) {
+            data.ox = seg.handleOut.x;
+            data.oy = seg.handleOut.y;
+          }
+          results.push(data);
+        }
+        return results;
       };
       $(canvas_wrapper).on('mousedown touchstart', draw_start).on('mousemove touchmove', drawing).on('mouseup touchend', draw_end);
       $(document.body).on('touchmove', function(e) {
