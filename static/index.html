@@ -31,6 +31,7 @@
 <div class="canvas-wrapper">
     <canvas id="canvas-pdf" class="canvas"></canvas>
     <canvas id="canvas-board" class="canvas"></canvas>
+    <canvas id="canvas-board-buffer" class="canvas"></canvas>
     <div class="canvas-cursors">
         <div class="cursor" ng-show="data._active" ng-repeat="(uid, data) in mouse_positions"
              ng-style="{'top': data.y * scale, 'left': data.x * scale, 'color': get_user(uid).color}">
@@ -66,7 +67,7 @@
     <a class="btn-icon" ng-click="load_prev_page()" ng-show="pdf && id == status.host"><span class="glyphicon glyphicon-arrow-left"></span></a>
     <span class="text-primary" ng-show="pdf && status.page!=undefined">{{status.page}}/{{pdf.numPages}}</span>
     <a class="btn-icon" ng-click="load_next_page()" ng-show="pdf && id == status.host"><span class="glyphicon glyphicon-arrow-right"></span></a>
-    <a class="btn-icon" ng-click="render()" ng-show="pdf"><span class="glyphicon glyphicon-refresh"></span></a>
+    <a class="btn-icon" ng-click="refresh()" ng-show="pdf"><span class="glyphicon glyphicon-refresh"></span></a>
     <a class="btn-icon" ng-show="status.file_id" ng-href="/pdf/{{status.file_id}}" ng-attr-download="{{status.file_name}}"><span class="glyphicon glyphicon-download-alt"></span></a>
     <a class="btn-icon" ng-click="toggle_fullscreen()"><span class="glyphicon glyphicon-fullscreen"></span></a>
     <a class="btn-icon" ng-click="show_home_menu=!show_home_menu"><span class="glyphicon glyphicon-home"></span></a>

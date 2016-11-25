@@ -4,7 +4,7 @@
 
   angular.module('app', []).controller('rootController', [
     '$scope', '$http', '$sce', '$timeout', 'util', function($scope, $http, $sce, $timeout, util) {
-      var $inputPDF, canvas_board, canvas_board_context, canvas_pdf, canvas_pdf_context, canvas_wrapper, delete_ghost_users, fileProgress, resizeCanvas, sendFile;
+      var $inputPDF, canvas_board, canvas_board_buffer, canvas_board_buffer_context, canvas_board_context, canvas_pdf, canvas_pdf_context, canvas_wrapper, delete_ghost_users, draw_end, draw_path, draw_start, draw_started, drawing, fileProgress, resizeCanvas, sendFile;
       $scope.app = {
         name: 'Webslide',
         title: 'Webslide',
@@ -20,18 +20,18 @@
       canvas_pdf_context = canvas_pdf.getContext('2d');
       canvas_board = document.getElementById('canvas-board');
       canvas_board_context = canvas_board.getContext('2d');
+      canvas_board_buffer = document.getElementById('canvas-board-buffer');
+      canvas_board_buffer_context = canvas_board_buffer.getContext('2d');
       $scope.socket_io.on('id', function(data) {
         return $scope.$apply(function() {
           return $scope.id = data;
         });
-      });
-      $scope.socket_io.on('status', function(status) {
+      }).on('status', function(status) {
         return $scope.$apply(function() {
           $scope.status = status;
           return delete_ghost_users();
         });
-      });
-      $scope.socket_io.on('mousePos', function(data) {
+      }).on('mousePos', function(data) {
         $timeout.cancel($scope.mouse_timeout[data.user_id]);
         return $scope.$apply(function() {
           data._active = true;
@@ -43,6 +43,32 @@
               return pos._active = false;
             }
           }, 3000);
+        });
+      }).on('drawPath', function(data) {
+        return $scope.$apply(function() {
+          var color, i, j, len, point, ref;
+          if (!$scope.status || !$scope.pdf || !$scope.scale) {
+            return;
+          }
+          color = $scope.get_user(data.user_id).color;
+          canvas_board_context.lineWidth = $scope.scale;
+          canvas_board_context.strokeStyle = color;
+          canvas_board_context.beginPath();
+          ref = data.path;
+          for (i = j = 0, len = ref.length; j < len; i = ++j) {
+            point = ref[i];
+            if (i === 0) {
+              canvas_board_context.moveTo(point.x * $scope.scale, point.y * $scope.scale);
+            } else {
+              canvas_board_context.lineTo(point.x * $scope.scale, point.y * $scope.scale);
+            }
+          }
+          canvas_board_context.stroke();
+          return canvas_board_context.closePath();
+        });
+      }).on('refresh', function() {
+        return $scope.$apply(function() {
+          return $scope.render();
         });
       });
       $scope.$watch('status.file_id', function(new_val) {
@@ -60,13 +86,13 @@
         return $scope.load_page(new_val);
       });
       $scope.get_user = function(uid) {
-        var i, len, ref, user;
+        var j, len, ref, user;
         if (!$scope.status) {
           return void 0;
         }
         ref = $scope.status.users;
-        for (i = 0, len = ref.length; i < len; i++) {
-          user = ref[i];
+        for (j = 0, len = ref.length; j < len; j++) {
+          user = ref[j];
           if (user.id === uid) {
             return user;
           }
@@ -114,6 +140,9 @@
       $scope.toggle_fullscreen = function() {
         return util.toggleFullscreen();
       };
+      $scope.refresh = function() {
+        return $scope.socket_io.emit('refresh');
+      };
       $scope.render = function() {
         var scale_h, scale_w, viewport;
         if (!$scope.pdf || !$scope.page) {
@@ -151,13 +180,13 @@
         $inputPDF.click();
       };
       delete_ghost_users = function() {
-        var i, j, len, len1, not_found, ref, results, to_remove, uid, user;
+        var j, k, len, len1, not_found, ref, results, to_remove, uid, user;
         to_remove = [];
         for (uid in $scope.mouse_positions) {
           not_found = true;
           ref = $scope.status.users;
-          for (i = 0, len = ref.length; i < len; i++) {
-            user = ref[i];
+          for (j = 0, len = ref.length; j < len; j++) {
+            user = ref[j];
             if (user.id === uid) {
               not_found = false;
               break;
@@ -168,8 +197,8 @@
           }
         }
         results = [];
-        for (j = 0, len1 = to_remove.length; j < len1; j++) {
-          uid = to_remove[j];
+        for (k = 0, len1 = to_remove.length; k < len1; k++) {
+          uid = to_remove[k];
           results.push(delete $scope.mouse_positions[uid]);
         }
         return results;
@@ -264,30 +293,74 @@
           return $scope.socket_io.emit('statusUpdate', $scope.status);
         }
       };
-      $(canvas_wrapper).on('mousemove', function(e) {
-        var offset;
+      draw_started = false;
+      draw_path = [];
+      draw_start = function(e) {
+        var pos, px, py, t;
         e.preventDefault();
         if (!$scope.status || !$scope.pdf || !$scope.scale) {
           return;
         }
-        offset = $(this).offset();
-        return $scope.socket_io.emit('mousePosUpdate', {
-          x: (e.pageX - offset.left) / $scope.scale,
-          y: (e.pageY - offset.top) / $scope.scale
-        });
-      });
-      $(canvas_wrapper).on('touchmove', function(e) {
-        var offset, t;
+        draw_started = true;
+        if (e.touches) {
+          t = e.touches[0];
+          px = t.pageX;
+          py = t.pageY;
+        } else {
+          px = e.pageX;
+          py = e.pageY;
+        }
+        pos = {
+          x: (px - this.offsetLeft) / $scope.scale,
+          y: (py - this.offsetTop) / $scope.scale
+        };
+        draw_path = [pos];
+        canvas_board_buffer_context.lineWidth = $scope.scale;
+        canvas_board_buffer_context.strokeStyle = $scope.get_user($scope.id).color;
+        canvas_board_buffer_context.beginPath();
+        return canvas_board_buffer_context.moveTo(pos.x * $scope.scale, pos.y * $scope.scale);
+      };
+      drawing = function(e) {
+        var pos, px, py, t;
         e.preventDefault();
         if (!$scope.status || !$scope.pdf || !$scope.scale) {
           return;
         }
-        t = e.touches[0];
-        offset = $(this).offset();
-        return $scope.socket_io.emit('mousePosUpdate', {
-          x: (t.pageX - offset.left) / $scope.scale,
-          y: (t.pageY - offset.top) / $scope.scale
+        if (e.touches) {
+          t = e.touches[0];
+          px = t.pageX;
+          py = t.pageY;
+        } else {
+          px = e.pageX;
+          py = e.pageY;
+        }
+        pos = {
+          x: (px - this.offsetLeft) / $scope.scale,
+          y: (py - this.offsetTop) / $scope.scale
+        };
+        $scope.socket_io.emit('mousePosUpdate', pos);
+        if (draw_started) {
+          draw_path.push(pos);
+          canvas_board_buffer_context.lineTo(pos.x * $scope.scale, pos.y * $scope.scale);
+          canvas_board_buffer_context.clearRect(0, 0, canvas_board_buffer.width, canvas_board_buffer.height);
+          return canvas_board_buffer_context.stroke();
+        }
+      };
+      draw_end = function(e) {
+        e.preventDefault();
+        if (!$scope.status || !$scope.pdf || !$scope.scale) {
+          return;
+        }
+        canvas_board_buffer_context.closePath();
+        canvas_board_buffer_context.clearRect(0, 0, canvas_board_buffer.width, canvas_board_buffer.height);
+        draw_started = false;
+        return $scope.socket_io.emit('drawPath', {
+          path: draw_path
         });
+      };
+      $(canvas_wrapper).on('mousedown touchstart', draw_start).on('mousemove touchmove', drawing).on('mouseup touchend', draw_end);
+      $(document.body).on('touchmove', function(e) {
+        return e.preventDefault();
       });
       return $(window).on('close', function() {
         return $scope.socket_io.close();

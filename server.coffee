@@ -59,6 +59,13 @@ io.on 'connection', (socket)->
   socket.on 'mousePosUpdate', (data)->
     data.user_id = socket.id
     io.emit 'mousePos', data
+
+  socket.on 'drawPath', (data)->
+    data.user_id = socket.id
+    io.emit 'drawPath', data
+
+  socket.on 'refresh', ->
+    io.emit 'refresh'
       
 add_user = (socket)->
   for user in status.users

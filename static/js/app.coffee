@@ -19,18 +19,18 @@ angular.module 'app', []
   canvas_pdf_context = canvas_pdf.getContext('2d')
   canvas_board = document.getElementById('canvas-board')
   canvas_board_context = canvas_board.getContext('2d')
+  canvas_board_buffer = document.getElementById('canvas-board-buffer')
+  canvas_board_buffer_context = canvas_board_buffer.getContext('2d')
 
-  $scope.socket_io.on 'id', (data)->
+  $scope.socket_io
+  .on 'id', (data)->
     $scope.$apply ->
       $scope.id = data
-
-  $scope.socket_io.on 'status', (status)->
-    # console.log status
+  .on 'status', (status)->
     $scope.$apply ->
       $scope.status = status
       delete_ghost_users()
-
-  $scope.socket_io.on 'mousePos', (data)->
+  .on 'mousePos', (data)->
     $timeout.cancel($scope.mouse_timeout[data.user_id])
     $scope.$apply ->
       data._active = true
@@ -40,6 +40,24 @@ angular.module 'app', []
         if pos
           pos._active = false
       , 3000
+  .on 'drawPath', (data)->
+    $scope.$apply ->
+      if not $scope.status or not $scope.pdf or not $scope.scale
+        return
+      color = $scope.get_user(data.user_id).color
+      canvas_board_context.lineWidth = $scope.scale
+      canvas_board_context.strokeStyle = color
+      canvas_board_context.beginPath()
+      for point, i in data.path
+        if i == 0
+          canvas_board_context.moveTo(point.x * $scope.scale, point.y * $scope.scale)
+        else
+          canvas_board_context.lineTo(point.x * $scope.scale, point.y * $scope.scale)
+      canvas_board_context.stroke()
+      canvas_board_context.closePath()
+  .on 'refresh', ->
+    $scope.$apply ->
+      $scope.render()
 
   $scope.$watch 'status.file_id', (new_val)->
     $scope.show_home_menu = !new_val
@@ -92,6 +110,9 @@ angular.module 'app', []
 
   $scope.toggle_fullscreen = ->
     util.toggleFullscreen()
+
+  $scope.refresh = ->
+    $scope.socket_io.emit 'refresh'
 
   $scope.render = ->
     if not $scope.pdf or not $scope.page
@@ -205,24 +226,68 @@ angular.module 'app', []
       $scope.status.page = page + 1
       $scope.socket_io.emit 'statusUpdate', $scope.status
 
-  $(canvas_wrapper).on 'mousemove', (e)->
-    e.preventDefault();
-    if not $scope.status or not $scope.pdf or not $scope.scale
-      return
-    offset = $(@).offset()
-    $scope.socket_io.emit 'mousePosUpdate',
-      x: (e.pageX - offset.left)/ $scope.scale
-      y: (e.pageY - offset.top) / $scope.scale
+  draw_started = false
+  draw_path = []
 
-  $(canvas_wrapper).on 'touchmove', (e)->
-    e.preventDefault();
+  draw_start = (e)->
+    e.preventDefault()
     if not $scope.status or not $scope.pdf or not $scope.scale
       return
-    t = e.touches[0]
-    offset = $(@).offset()
-    $scope.socket_io.emit 'mousePosUpdate',
-      x: (t.pageX - offset.left) / $scope.scale
-      y: (t.pageY - offset.top) / $scope.scale
+    draw_started = true
+    if e.touches
+      t = e.touches[0]
+      px = t.pageX
+      py = t.pageY
+    else
+      px = e.pageX
+      py = e.pageY
+    pos =
+      x: (px - @offsetLeft) / $scope.scale
+      y: (py - @offsetTop) / $scope.scale
+    draw_path = [pos]
+    canvas_board_buffer_context.lineWidth = $scope.scale
+    canvas_board_buffer_context.strokeStyle = $scope.get_user($scope.id).color
+    canvas_board_buffer_context.beginPath()
+    canvas_board_buffer_context.moveTo(pos.x * $scope.scale, pos.y * $scope.scale)
+
+  drawing = (e)->
+    e.preventDefault()
+    if not $scope.status or not $scope.pdf or not $scope.scale
+      return
+    if e.touches
+      t = e.touches[0]
+      px = t.pageX
+      py = t.pageY
+    else
+      px = e.pageX
+      py = e.pageY
+    pos =
+      x: (px - @offsetLeft)/ $scope.scale
+      y: (py - @offsetTop) / $scope.scale
+    $scope.socket_io.emit 'mousePosUpdate', pos
+    if draw_started
+      draw_path.push(pos)
+      canvas_board_buffer_context.lineTo(pos.x * $scope.scale, pos.y * $scope.scale)
+      canvas_board_buffer_context.clearRect(0, 0, canvas_board_buffer.width, canvas_board_buffer.height)
+      canvas_board_buffer_context.stroke()
+
+  draw_end = (e)->
+    e.preventDefault()
+    if not $scope.status or not $scope.pdf or not $scope.scale
+      return
+    canvas_board_buffer_context.closePath()
+    canvas_board_buffer_context.clearRect(0, 0, canvas_board_buffer.width, canvas_board_buffer.height)
+    draw_started = false
+    $scope.socket_io.emit 'drawPath',
+      path: draw_path
+
+  $(canvas_wrapper)
+  .on 'mousedown touchstart', draw_start
+  .on 'mousemove touchmove', drawing
+  .on 'mouseup touchend', draw_end
+
+  $(document.body).on 'touchmove', (e)->
+    e.preventDefault()
 
   $(window).on 'close', ->
     $scope.socket_io.close()

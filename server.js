@@ -76,9 +76,16 @@
       status = data;
       return io.emit('status', status);
     });
-    return socket.on('mousePosUpdate', function(data) {
+    socket.on('mousePosUpdate', function(data) {
       data.user_id = socket.id;
       return io.emit('mousePos', data);
+    });
+    socket.on('drawPath', function(data) {
+      data.user_id = socket.id;
+      return io.emit('drawPath', data);
+    });
+    return socket.on('refresh', function() {
+      return io.emit('refresh');
     });
   });
 
