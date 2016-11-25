@@ -60,11 +60,12 @@ angular.module 'app', []
     $scope.pdf = undefined
     $scope.downloadProgress = 0
     PDFJS.getDocument(url, undefined , undefined , (progress)->
-      $timeout ->
-        if progress.loaded >= progress.total
-          $scope.downloadProgress = undefined
-        else
-          $scope.downloadProgress = Math.round(100.0 * progress.loaded / progress.total)
+      if progress.total > 0
+        $timeout ->
+          if progress.loaded >= progress.total
+            $scope.downloadProgress = undefined
+          else
+            $scope.downloadProgress = Math.round(100.0 * progress.loaded / progress.total)
     ).then (pdf)->
       $scope.pdf = pdf
       $scope.load_page(page, callback)

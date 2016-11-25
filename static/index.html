@@ -24,7 +24,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/static/vendor/js/pdfjs/build/pdf.js"></script>
 
-    <script src="/static/js/app.js?v=201611121049"></script>
+    <script src="/static/js/app.js?v=201611251505"></script>
     <script src="/static/js/util.js?v=201611120910"></script>
 </head>
 <body>
@@ -51,6 +51,7 @@
                             </div>
                             <input type="file" id="input-pdf" class="hidden" name="pdf" accept="application/pdf">
                             <button class="btn btn-primary btn-lg" ng-click="startPresentation()">Start Presentation</button>
+                            <p><br>{{app.copyright}}</p>
                         </div>
                     </div>
                 </div>
@@ -59,8 +60,9 @@
     </div>
 </div>
 <div class="toolbar">
-    <span ng-show="downloadProgress">Loading "{{status.file_name}}" ({{downloadProgress}}%)</span>
+    <span ng-show="downloadProgress!=undefined">Loading "{{status.file_name}}" ({{downloadProgress}}%)</span>
     <a class="btn-icon" ng-click="load_prev_page()" ng-show="pdf && id == status.host"><span class="glyphicon glyphicon-arrow-left"></span></a>
+    <span class="text-primary" ng-show="pdf && status.page!=undefined">{{status.page}}/{{pdf.numPages}}</span>
     <a class="btn-icon" ng-click="load_next_page()" ng-show="pdf && id == status.host"><span class="glyphicon glyphicon-arrow-right"></span></a>
     <a class="btn-icon" ng-click="render()" ng-show="pdf"><span class="glyphicon glyphicon-refresh"></span></a>
     <a class="btn-icon" ng-show="status.file_id" ng-href="/pdf/{{status.file_id}}" ng-attr-download="{{status.file_name}}"><span class="glyphicon glyphicon-download-alt"></span></a>

@@ -74,13 +74,15 @@
         $scope.pdf = void 0;
         $scope.downloadProgress = 0;
         return PDFJS.getDocument(url, void 0, void 0, function(progress) {
-          return $timeout(function() {
-            if (progress.loaded >= progress.total) {
-              return $scope.downloadProgress = void 0;
-            } else {
-              return $scope.downloadProgress = Math.round(100.0 * progress.loaded / progress.total);
-            }
-          });
+          if (progress.total > 0) {
+            return $timeout(function() {
+              if (progress.loaded >= progress.total) {
+                return $scope.downloadProgress = void 0;
+              } else {
+                return $scope.downloadProgress = Math.round(100.0 * progress.loaded / progress.total);
+              }
+            });
+          }
         }).then(function(pdf) {
           $scope.pdf = pdf;
           return $scope.load_page(page, callback);
