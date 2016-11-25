@@ -139,7 +139,7 @@ angular.module 'app', []
     $scope.page.render
       canvasContext: canvas_pdf_context
       viewport: viewport
-    paper.setup([viewport.width, viewport.height])
+    paper.setup([viewport.width / $scope.scale, viewport.height / $scope.scale])
 
   $inputPDF = $('#input-pdf')
   $inputPDF.on 'change', ()->
@@ -240,6 +240,8 @@ angular.module 'app', []
   draw_start = (e)->
     e.preventDefault()
     if not $scope.status or not $scope.pdf or not $scope.scale
+      return
+    if e.which != 1  # not left button
       return
     draw_started = true
     if e.touches

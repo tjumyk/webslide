@@ -9,7 +9,7 @@
     <title ng-bind="app.title"></title>
     <link rel="shortcut icon" href="/static/image/logo-64.png" type="image/png">
     <link rel="stylesheet" href="/static/vendor/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/css/app.css?v=201611251602">
+    <link rel="stylesheet" href="/static/css/app.css?v=201611252357">
 
     <!--[if lt IE 9]>
     <script src="/static/vendor/js/html5shiv.min.js"></script>
@@ -25,10 +25,15 @@
     <script src="/static/vendor/js/pdfjs/build/pdf.js"></script>
     <script src="/static/vendor/js/paper-core.min.js"></script>
 
-    <script src="/static/js/app.js?v=201611252049"></script>
+    <script src="/static/js/app.js?v=201611252356"></script>
     <script src="/static/js/util.js?v=201611120910"></script>
 </head>
 <body>
+<div class="vertical-center" ng-show="downloadProgress!=undefined">
+    <div class="inner">
+        <img src="/static/image/loading.gif" class="img-responsive center-block">
+    </div>
+</div>
 <div class="canvas-wrapper">
     <canvas id="canvas-pdf" class="canvas"></canvas>
     <canvas id="canvas-board" class="canvas"></canvas>
@@ -40,9 +45,9 @@
         </div>
     </div>
 </div>
-<div class="box-home-menu" ng-show="show_home_menu">
-    <div class="wrapper">
-        <div class="row">
+<div class="vertical-center" ng-show="show_home_menu">
+    <div class="inner">
+        <div class="row center-block">
             <div class="col-sm-4 col-sm-offset-4">
                 <div class="panel panel-primary">
                     <div class="panel-body">

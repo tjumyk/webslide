@@ -170,7 +170,7 @@
           canvasContext: canvas_pdf_context,
           viewport: viewport
         });
-        return paper.setup([viewport.width, viewport.height]);
+        return paper.setup([viewport.width / $scope.scale, viewport.height / $scope.scale]);
       };
       $inputPDF = $('#input-pdf');
       $inputPDF.on('change', function() {
@@ -305,6 +305,9 @@
         var pos, px, py, t;
         e.preventDefault();
         if (!$scope.status || !$scope.pdf || !$scope.scale) {
+          return;
+        }
+        if (e.which !== 1) {
           return;
         }
         draw_started = true;
