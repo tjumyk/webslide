@@ -11,6 +11,8 @@ Currently, it is only an experimental project for ad-hoc usage only.
  - Support PDF slides (rendered by [PDF.js](https://mozilla.github.io/pdf.js/))
  - Synchronize the viewport of the presenter to all the watchers
  - Display the moving cursors of all the connected users
+ - Display the drawing from all the connected users
+    - optimize drawn paths with bezier curves 
 
 ## How to Run
 
