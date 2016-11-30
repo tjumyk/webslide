@@ -379,16 +379,16 @@
         for (i = j = 0, len = ref.length; j < len; i = ++j) {
           seg = ref[i];
           data = {
-            x: seg.point.x,
-            y: seg.point.y
+            x: Math.round(seg.point.x * 100) / 100,
+            y: Math.round(seg.point.y * 100) / 100
           };
           if (i > 0) {
-            data.ix = seg.handleIn.x;
-            data.iy = seg.handleIn.y;
+            data.ix = Math.round(seg.handleIn.x * 100) / 100;
+            data.iy = Math.round(seg.handleIn.y * 100) / 100;
           }
           if (i < total - 1) {
-            data.ox = seg.handleOut.x;
-            data.oy = seg.handleOut.y;
+            data.ox = Math.round(seg.handleOut.x * 100) / 100;
+            data.oy = Math.round(seg.handleOut.y * 100) / 100;
           }
           results.push(data);
         }
