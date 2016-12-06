@@ -307,7 +307,7 @@
         if (!$scope.status || !$scope.pdf || !$scope.scale) {
           return;
         }
-        if (e.which !== 1) {
+        if (e.type === 'mousedown' && e.which !== 1) {
           return;
         }
         draw_started = true;

@@ -241,7 +241,7 @@ angular.module 'app', []
     e.preventDefault()
     if not $scope.status or not $scope.pdf or not $scope.scale
       return
-    if e.which != 1  # not left button
+    if e.type == 'mousedown' and e.which != 1  # clicked non-left button
       return
     draw_started = true
     if e.touches
